@@ -1,0 +1,96 @@
+﻿version: "3.8"
+
+services:
+  postgres:
+    image: postgres:15
+    container_name: authentik-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    volumes:
+      - C:/DockerFast/databases/authentik-postgres:/var/lib/postgresql/data
+    networks:
+      - core
+
+  redis:
+    image: redis:7
+    container_name: authentik-redis
+    restart: unless-stopped
+    command: redis-server --requirepass ${REDIS_PASSWORD}
+    volumes:
+      - C:/DockerFast/cache/redis-authentik:/data
+    networks:
+      - core
+
+  authentik-server:
+    image: ghcr.io/goauthentik/server:latest
+    container_name: authentik-server
+    restart: unless-stopped
+    command: server
+    environment:
+      AUTHENTIK_SECRET_KEY: ${AUTHENTIK_SECRET_KEY}
+      AUTHENTIK_REDIS__HOST: redis
+      AUTHENTIK_REDIS__PASSWORD: ${REDIS_PASSWORD}
+      AUTHENTIK_POSTGRESQL__HOST: postgres
+      AUTHENTIK_POSTGRESQL__USER: ${POSTGRES_USER}
+      AUTHENTIK_POSTGRESQL__PASSWORD: ${POSTGRES_PASSWORD}
+      AUTHENTIK_POSTGRESQL__NAME: ${POSTGRES_DB}
+    volumes:
+      - D:/docker/data/core/authentik:/media
+      - D:/docker/config/authentik:/config
+    ports:
+      - "9000:9000"
+    depends_on:
+      - postgres
+      - redis
+    networks:
+      - core
+      - edge
+
+  authentik-worker:
+    image: ghcr.io/goauthentik/server:latest
+    container_name: authentik-worker
+    restart: unless-stopped
+    command: worker
+    environment:
+      AUTHENTIK_SECRET_KEY: ${AUTHENTIK_SECRET_KEY}
+      AUTHENTIK_REDIS__HOST: redis
+      AUTHENTIK_REDIS__PASSWORD: ${REDIS_PASSWORD}
+      AUTHENTIK_POSTGRESQL__HOST: postgres
+      AUTHENTIK_POSTGRESQL__USER: ${POSTGRES_USER}
+      AUTHENTIK_POSTGRESQL__PASSWORD: ${POSTGRES_PASSWORD}
+      AUTHENTIK_POSTGRESQL__NAME: ${POSTGRES_DB}
+    volumes:
+      - D:/docker/data/core/authentik:/media
+      - D:/docker/config/authentik:/config
+    depends_on:
+      - postgres
+      - redis
+    networks:
+      - core
+
+  caddy:
+    image: caddy:2
+    container_name: caddy
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - D:/docker/config/caddy:/etc/caddy
+      - D:/docker/data/core/caddy:/config
+      - C:/DockerFast/proxy/caddy-data:/data
+      - D:/docker/logs/caddy:/var/log/caddy
+    depends_on:
+      - authentik-server
+    networks:
+      - core
+      - edge
+
+networks:
+  core:
+    external: true
+  edge:
+    external: true

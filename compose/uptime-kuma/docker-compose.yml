@@ -1,0 +1,24 @@
+services:
+  uptime-kuma:
+    image: louislam/uptime-kuma:latest
+    container_name: uptime-kuma
+    restart: unless-stopped
+
+    ports:
+      - "3001:3001"
+
+    environment:
+      - UPTIME_KUMA_PROXY=true
+
+    volumes:
+      - D:/Docker/data/ops/uptime-kuma:/app/data
+
+    networks:
+      - ops
+      - edge
+
+networks:
+  ops:
+    external: true
+  edge:
+    external: true

@@ -1,0 +1,22 @@
+services:
+  caddy:
+    image: caddy:2
+    container_name: caddy
+    restart: unless-stopped
+    ports:
+      - "80:80"
+    volumes:
+      - D:/docker/data/core/caddy/Caddyfile:/etc/caddy/Caddyfile:ro
+      - D:/docker/data/core/caddy:/data
+      - D:/docker/logs/caddy:/var/log/caddy
+
+  cloudflared:
+    image: cloudflare/cloudflared:latest
+    container_name: cloudflared
+    restart: unless-stopped
+    command: tunnel --config /etc/cloudflared/config.yml --no-autoupdate run --token eyJhIjoiNjM1MDAzYzAxNWYyYzg0MjQ0NTVjZjlkN2U5MzZhYTUiLCJ0IjoiYTFhMjQ3MGQtYzkxMC00ODFiLWE2M2YtYzhlNWU0ZmNjOWMxIiwicyI6Ik1EQmxOV0kzTmpNdE1HSXhZUzAwTVRaakxUZzBaall0TXpobVlUWm1ZMkl5WlRaaCJ9
+    depends_on:
+      - caddy
+    volumes:
+      - D:/docker/data/core/cloudflared/config.yml:/etc/cloudflared/config.yml:ro
+      - D:/docker/data/core/cloudflared:/home/nonroot/.cloudflared
